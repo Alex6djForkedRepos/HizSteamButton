@@ -1,7 +1,6 @@
 # ![HizSearch icon](https://hizsearch.pages.dev/favicon-32x32.png) HizSearch Steam Button
-![License](https://img.shields.io/badge/License-MIT-blue)
 
-Search any Steam game on HizSearch with one click. Works on both Steam Store and SteamDB.
+Search for any Steam game on HizSearch ([a game search engine](http://hizsearch.pages.dev/)) with just one click. It works on both the Steam Store and SteamDB.
 
 ## Installation methods
 
@@ -13,30 +12,30 @@ Since Steam runs on Chromium, you can install Chrome extensions directly inside 
 3) In the address bar, enter `chrome://extensions` and press Enter.
 4) Turn on **Developer mode** (top-right toggle).
 5) Drag and drop the extracted folder onto the extensions page.
-6) Click the extension icon in your toolbar to configure position, icon and behavior per site.
+6) Click **Details** → **Extension options** to configure position, icon and more.
 7) The button will appear on Steam Store and SteamDB app pages.
 
-> [!WARNING] 
-> If you plan to download content directly using this option, we recommend installing uBlock Origin Lite (since it is the only one supported in this mode).
+> [!IMPORTANT]  
+> If you're having trouble dragging and dropping the folder in step 5, you can follow these steps provided by [@thesaguaro](https://github.com/hiz0147/HizSteamButton/issues/4#issuecomment-5028797121) to fix the issue:
 > 
-> To install it, in the same section where you dragged the folder, tap the Chrome Web Store, search for uBlock Origin Lite, and install it just as you would in a regular browser.
+> After middle clicking random game and opening the _chrome://extensions_ tab in _steam_ browser, click the _Chrome Web Store_ button (its on the left under the _Keyboard Shortcuts_). Then download and install (_Add to Chrome_ button) any extension (i recommend installing _uBlock Origin Lite_). Click save in the file manager pop-up (if it asks you to). You might now notice that a new window (tab) opened that looks exactly like the default new chromium tab, where it will say that the extension you just downloaded has been added to chromium. Now, in that new tab, go to _chrome://extensions_ and you should be able to drag and drop the zip or crx file that will install the plugin.
 
 > [!NOTE]
-> If you have issues with Cloudflare when opening HizSearch, try closing Steam completely and opening it again.
+> If you're having issues with the Cloudflare Challenge that aren't resolved by refreshing the page, try closing Steam completely and reopening it.
 
 ---
 
-### Manual web browser extension
+### Chrome / Edge / Brave / or any Chromium
 1) [Download the latest extension zip](https://github.com/hiz0147/HizSteamButton/releases/latest/download/hizsteambutton.zip) and extract it.
-2) Open `chrome://extensions` (Chrome/Edge/Brave) or `about:debugging#/runtime/this-firefox` (Firefox).
-3) Turn on **Developer mode** (top-right toggle in Chrome, top-left in Firefox).
+2) Open `chrome://extensions`.
+3) Turn on **Developer mode** (top-right toggle).
 4) Click **Load unpacked** and select the extracted folder.
 5) The button will appear on Steam Store and SteamDB app pages.
 6) Click the extension icon in your toolbar to configure position, icon and behavior.
 
 ---
 
-### Firefox Extension (add-on store)
+### Firefox (add-on store)
 [HizSearch Add-on](https://addons.mozilla.org/en-US/firefox/addon/hizsearch-steam-button/)
 
 ---
