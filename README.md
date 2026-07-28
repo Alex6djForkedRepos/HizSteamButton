@@ -25,6 +25,12 @@ Since Steam runs on Chromium, you can install Chrome extensions directly inside 
 
 ---
 
+### Millennium
+
+https://github.com/hiz0147/HizSearch-Millennium
+
+---
+
 ### Chrome / Edge / Brave / or any Chromium
 1) [Download the latest extension zip](https://github.com/hiz0147/HizSteamButton/releases/latest/download/hizsteambutton.zip) and extract it.
 2) Open `chrome://extensions`.
