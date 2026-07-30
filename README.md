@@ -4,7 +4,7 @@ Search for any Steam game on HizSearch ([a game search engine](http://hizsearch.
 
 ## Installation methods
 
-### Steam Client Browser
+### Steam Client - Browser
 Since Steam runs on Chromium, you can install Chrome extensions directly inside it.
 
 1) [Download the latest extension zip](https://github.com/hiz0147/HizSteamButton/releases/latest/download/hizsteambutton.zip) and extract it.
@@ -13,7 +13,7 @@ Since Steam runs on Chromium, you can install Chrome extensions directly inside 
 4) Turn on **Developer mode** (top-right toggle).
 5) Drag and drop the extracted folder onto the extensions page.
 6) Click **Details** → **Extension options** to configure position, icon and more.
-7) The button will appear on Steam Store and SteamDB app pages.
+7) Done.
 
 > [!IMPORTANT]  
 > If you're having trouble dragging and dropping the folder in step 5, you can follow these steps provided by [@thesaguaro](https://github.com/hiz0147/HizSteamButton/issues/4#issuecomment-5028797121) to fix the issue:
@@ -25,7 +25,7 @@ Since Steam runs on Chromium, you can install Chrome extensions directly inside 
 
 ---
 
-### Millennium
+### Steam Client - Millennium
 
 https://github.com/hiz0147/HizSearch-Millennium
 
