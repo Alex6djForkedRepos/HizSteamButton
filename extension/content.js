@@ -1,9 +1,10 @@
 (function () {
+    var isSteamStore = location.hostname === 'store.steampowered.com';
+    var isWishlist = isSteamStore && /\/wishlist\//.test(location.pathname);
     var APP_ID = (window.location.pathname.match(/\/app\/(\d+)/) || [])[1];
-    if (!APP_ID) return;
+    if (!isSteamStore && !APP_ID) return;
 
     var HIZ_URL = 'https://hizsearch.pages.dev';
-    var isSteamStore = location.hostname === 'store.steampowered.com';
     var currentSite = isSteamStore ? 'store' : 'steamdb';
     chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         if (msg.action === 'getSite') sendResponse({ site: currentSite });
@@ -32,8 +33,8 @@
         return /Valve Steam|SteamClient/i.test(navigator.userAgent);
     }
 
-    function openHiz(newTab) {
-        var url = HIZ_URL + '/?q=' + APP_ID;
+    function openHiz(newTab, appId) {
+        var url = HIZ_URL + '/?q=' + (appId || APP_ID);
         if (newTab) {
             window.open(url, '_blank');
         } else {
@@ -61,7 +62,13 @@
             var wrapper = document.createElement('div');
             if (place.wrapperClass) wrapper.className = place.wrapperClass;
             wrapper.setAttribute('data-hizwrap', '');
-            wrapper.style.cssText = 'background:none;border:none;box-shadow:none;';
+            wrapper.style.cssText = 'position:relative;z-index:1;display:inline-flex;background:none;border:none;box-shadow:none;';
+            if (!document.getElementById('hizsearch-wrapper-style')) {
+                var wrapStyle = document.createElement('style');
+                wrapStyle.id = 'hizsearch-wrapper-style';
+                wrapStyle.textContent = '[data-hizwrap]::before{content:"";position:absolute;inset:-1px;background:#000;border-radius:2px;z-index:-1;}';
+                document.head.appendChild(wrapStyle);
+            }
             wrapper.appendChild(btn);
             node = wrapper;
         }
@@ -78,7 +85,156 @@
         return true;
     }
 
-    function buildSteamNativeButton(showIcon, newTab, place) {
+    function getWishlistAppId(row) {
+        var drag = row.getAttribute('data-rfd-draggable-id') || '';
+        var m = drag.match(/^WishlistItem-(\d+)-/);
+        if (m) return m[1];
+        var link = row.querySelector('a[href*="/app/"]');
+        if (link) {
+            var m2 = (link.href.match(/\/app\/(\d+)/) || [])[1];
+            if (m2) return m2;
+        }
+        return null;
+    }
+
+    function findActionPriceLink(row) {
+        var links = row.querySelectorAll('a[href*="/app/"]');
+        for (var i = links.length - 1; i >= 0; i--) {
+            var link = links[i];
+            if (link.querySelector('img')) continue;
+            if (link.parentElement && link.parentElement.querySelector('button')) return link;
+        }
+        return null;
+    }
+
+    function getNonImageAppLink(row) {
+        var links = row.querySelectorAll('a[href*="/app/"]');
+        for (var i = 0; i < links.length; i++) {
+            if (!links[i].querySelector('img')) return links[i];
+        }
+        return null;
+    }
+
+    function buildWishlistButton(newTab, appId) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'hizsearch-btn';
+        btn.style.cssText =
+            'cursor:pointer;' +
+            'padding:0 21px;height:32px;' +
+            'background:#67C1F5CC;color:#fff;' +
+            'border-radius:2px;text-align:center;' +
+            'font-family:"Motiva Sans",sans-serif;' +
+            'font-size:14px;display:inline-flex;align-items:center;gap:4px;' +
+            'line-height:32px;border:0;position:relative;' +
+            'flex-shrink:0;margin:0 3px 0 0;' +
+            'transition:all 0.2s ease;' +
+            'user-select:none;';
+
+        var label = document.createElement('span');
+        label.textContent = 'HizSearch';
+        btn.appendChild(label);
+
+        btn.addEventListener('mouseenter', function () {
+            btn.style.background = 'linear-gradient(-60deg, #417a9b 5%, #67c1f5 95%)';
+        });
+        btn.addEventListener('mouseleave', function () {
+            btn.style.background = '#67C1F5CC';
+        });
+        btn.addEventListener('click', function () {
+            openHiz(newTab, appId);
+        });
+
+        return btn;
+    }
+
+    function cleanWishlist() {
+        var btns = document.querySelectorAll('.hizsearch-btn');
+        for (var i = 0; i < btns.length; i++) btns[i].remove();
+        var rows = document.querySelectorAll('[data-rfd-draggable-id^="WishlistItem-"][data-hiz]');
+        for (var j = 0; j < rows.length; j++) rows[j].removeAttribute('data-hiz');
+    }
+
+    var wishlistTimer = null;
+    var wishlistObserver = null;
+
+    function scanWishlist(newTab) {
+        var rows = document.querySelectorAll('[data-rfd-draggable-id^="WishlistItem-"]');
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            if (row.hasAttribute('data-hiz')) continue;
+            var appId = getWishlistAppId(row);
+            if (!appId) continue;
+
+            var priceLink = findActionPriceLink(row);
+            var btn = buildWishlistButton(newTab, appId);
+            if (priceLink) {
+                var box = priceLink.parentElement;
+                box.parentElement.insertBefore(btn, box);
+            } else {
+                var titleLink = getNonImageAppLink(row);
+                if (!titleLink) continue;
+                titleLink.parentElement.insertBefore(btn, titleLink.nextSibling);
+            }
+            row.setAttribute('data-hiz', '');
+        }
+    }
+
+    function renderWishlist(newTab) {
+        cleanWishlist();
+        scanWishlist(newTab);
+
+        if (wishlistObserver) wishlistObserver.disconnect();
+        wishlistObserver = new MutationObserver(function () {
+            clearTimeout(wishlistTimer);
+            wishlistTimer = setTimeout(function () {
+                scanWishlist(newTab);
+            }, 100);
+        });
+        wishlistObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    var hizNewTab = true;
+    var pendingAppId = null;
+    var capsuleTimer = null;
+    var capsuleObserver = null;
+
+    function addMenuOption(tip) {
+        if (tip.querySelector('[data-hiz-menu]')) return;
+        var opt = document.createElement('div');
+        opt.className = 'option';
+        opt.setAttribute('data-hiz-menu', '');
+        opt.textContent = 'HizSearch';
+        opt.style.cursor = 'pointer';
+        opt.addEventListener('click', function () {
+            if (pendingAppId) openHiz(hizNewTab, pendingAppId);
+            try {
+                if (tip.hidePopover) tip.hidePopover();
+            } catch (e) {}
+        });
+        tip.appendChild(opt);
+    }
+
+    function injectMenuOption() {
+        var tips = document.querySelectorAll('.ds_options_tooltip');
+        for (var i = 0; i < tips.length; i++) addMenuOption(tips[i]);
+    }
+
+    function initCapsuleMenu() {
+        document.addEventListener('click', function (e) {
+            var cap = e.target.closest('[data-ds-appid]');
+            if (cap) pendingAppId = cap.getAttribute('data-ds-appid');
+        }, true);
+
+        capsuleObserver = new MutationObserver(function () {
+            clearTimeout(capsuleTimer);
+            capsuleTimer = setTimeout(injectMenuOption, 50);
+        });
+        capsuleObserver.observe(document.body, { childList: true, subtree: true });
+        injectMenuOption();
+    }
+
+    function buildSteamNativeButton(newTab, place) {
         var btn;
 
         if (place && (place.id === 'other-site-info' || place.id === 'below-dev-pub')) {
@@ -88,13 +244,6 @@
             btn.id = 'hizsearch-btn';
 
             var span = document.createElement('span');
-            if (showIcon) {
-                var icon = document.createElement('img');
-                icon.src = HIZ_URL + '/favicon-32x32.png';
-                icon.alt = '';
-                icon.style.cssText = 'width:16px;height:16px;vertical-align:middle;margin-right:6px;';
-                span.appendChild(icon);
-            }
             span.appendChild(document.createTextNode('HizSearch'));
             btn.appendChild(span);
 
@@ -119,14 +268,6 @@
             'transition:all 0.2s ease;' +
             'user-select:none;';
 
-        if (showIcon) {
-            var icon = document.createElement('img');
-            icon.src = HIZ_URL + '/favicon-32x32.png';
-            icon.alt = '';
-            icon.style.cssText = 'width:12px;height:12px;flex-shrink:0;';
-            btn.appendChild(icon);
-        }
-
         var label = document.createElement('span');
         label.textContent = 'HizSearch';
         btn.appendChild(label);
@@ -144,7 +285,7 @@
         return btn;
     }
 
-    function buildSteamdbNativeButton(showIcon, newTab) {
+    function buildSteamdbNativeButton(newTab) {
         var btn = document.createElement('a');
         btn.id = 'hizsearch-btn';
         btn.className = 'btn';
@@ -155,30 +296,14 @@
             openHiz(newTab);
         });
 
-        if (showIcon) {
-            var icon = document.createElement('img');
-            icon.src = HIZ_URL + '/favicon-32x32.png';
-            icon.alt = '';
-            icon.style.cssText = 'width:16px;height:16px;vertical-align:middle;margin-right:4px;';
-            btn.appendChild(icon);
-        }
-
         btn.appendChild(document.createTextNode('HizSearch'));
         return btn;
     }
 
-    function renderFloating(position, showIcon, newTab) {
+    function renderFloating(position, newTab) {
         clean();
         var btn = document.createElement('div');
         btn.id = 'hizsearch-btn';
-
-        if (showIcon) {
-            var icon = document.createElement('img');
-            icon.src = HIZ_URL + '/favicon-32x32.png';
-            icon.alt = '';
-            icon.className = 'hiz-icon';
-            btn.appendChild(icon);
-        }
 
         var label = document.createElement('span');
         label.textContent = 'Search on Hiz';
@@ -217,19 +342,18 @@
             'transform:translateY(-2px);',
             'box-shadow:0 10px 20px -10px rgba(16,185,129,0.15);',
             '}',
-            '#hizsearch-btn:active{transform:translateY(0);}',
-            showIcon ? '#hizsearch-btn .hiz-icon{width:18px;height:18px;flex-shrink:0;}' : ''
+            '#hizsearch-btn:active{transform:translateY(0);}'
         ].join('');
 
         document.head.appendChild(style);
         document.body.appendChild(btn);
     }
 
-    function render(placeId, showIcon, newTab) {
+    function render(placeId, newTab) {
         clean();
 
         if (placeId.indexOf('floating-') === 0) {
-            renderFloating(placeId, showIcon, newTab);
+            renderFloating(placeId, newTab);
             return;
         }
 
@@ -237,12 +361,12 @@
         if (!place) place = sitePlaces[currentSite][0];
 
         if (currentSite === 'steamdb') {
-            var dbBtn = buildSteamdbNativeButton(showIcon, newTab);
+            var dbBtn = buildSteamdbNativeButton(newTab);
             injectAtPlace(dbBtn, place);
             return;
         }
 
-        var btn = buildSteamNativeButton(showIcon, newTab, place);
+        var btn = buildSteamNativeButton(newTab, place);
 
         if (place.id === 'other-site-info') {
             var container = document.querySelector(place.selector);
@@ -268,7 +392,9 @@
     var storageKey = currentSite === 'store' ? 'place_store' : 'place_steamdb';
     var defaultPlace = currentSite === 'store' ? 'other-site-info' : 'app-links';
 
-    chrome.storage.sync.get(['position', 'place_store', 'place_steamdb', 'showIcon', 'newTab'], function (data) {
+    if (isSteamStore) initCapsuleMenu();
+
+    chrome.storage.sync.get(['position', 'place_store', 'place_steamdb', 'newTab'], function (data) {
         if ('position' in data && !('place_store' in data) && !('place_steamdb' in data)) {
             var migrate = data.position;
             if (migrate === 'native' || migrate === 'steam-native') {
@@ -281,23 +407,35 @@
             chrome.storage.sync.remove('position');
         }
 
-        var placeId = data[storageKey] || defaultPlace;
         var newTab = 'newTab' in data ? data.newTab : !isSteamClient();
-        render(placeId, data.showIcon !== false, newTab);
+        hizNewTab = newTab;
+        if (isWishlist) {
+            renderWishlist(newTab);
+            return;
+        }
+        if (!APP_ID) return;
+
+        var placeId = data[storageKey] || defaultPlace;
+        render(placeId, newTab);
     });
 
     chrome.storage.onChanged.addListener(function (changes, area) {
-        if (area === 'sync') {
-            for (var key in changes) {
-                if (key === storageKey || key === 'showIcon' || key === 'newTab') {
-                    chrome.storage.sync.get([storageKey, 'showIcon', 'newTab'], function (data) {
-                        var placeId = data[storageKey] || defaultPlace;
-                        var newTab = 'newTab' in data ? data.newTab : !isSteamClient();
-                        render(placeId, data.showIcon !== false, newTab);
-                    });
-                    return;
-                }
-            }
+        if (area !== 'sync') return;
+        var hit = false;
+        for (var key in changes) {
+            if (key === storageKey || key === 'newTab') { hit = true; break; }
         }
+        if (!hit) return;
+        chrome.storage.sync.get([storageKey, 'newTab'], function (data) {
+            var newTab = 'newTab' in data ? data.newTab : !isSteamClient();
+            hizNewTab = newTab;
+            if (isWishlist) {
+                renderWishlist(newTab);
+                return;
+            }
+            if (!APP_ID) return;
+            var placeId = data[storageKey] || defaultPlace;
+            render(placeId, newTab);
+        });
     });
 })();

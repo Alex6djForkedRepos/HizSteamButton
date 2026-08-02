@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "HizSearch Steam Button",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "description": "Search the current game on HizSearch",
     "author": "HizSearch",
     "homepage_url": "https://hizsearch.pages.dev",
@@ -22,7 +22,7 @@
     "content_scripts": [
         {
             "matches": [
-                "https://store.steampowered.com/app/*",
+                "https://store.steampowered.com/*",
                 "https://steamdb.info/app/*"
             ],
             "js": ["content.js"],

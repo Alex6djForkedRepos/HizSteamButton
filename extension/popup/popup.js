@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var siteLabel = document.getElementById('siteLabel');
     var placeOptions = document.getElementById('placeOptions');
-    var showIconCheck = document.getElementById('showIcon');
     var newTabCheck = document.getElementById('newTab');
 
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
@@ -33,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var storageKey = currentSite === 'store' ? 'place_store' : 'place_steamdb';
         siteLabel.textContent = currentSite === 'store' ? 'Steam Store' : 'SteamDB';
 
-        chrome.storage.sync.get(['position', 'place_store', 'place_steamdb', 'showIcon', 'newTab'], function (data) {
+        chrome.storage.sync.get(['position', 'place_store', 'place_steamdb', 'newTab'], function (data) {
             if ('position' in data && !('place_store' in data) && !('place_steamdb' in data)) {
                 var migrate = data.position;
                 if (migrate === 'native' || migrate === 'steam-native') {
@@ -62,14 +61,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
 
-            showIconCheck.checked = data.showIcon !== false;
             newTabCheck.checked = data.newTab !== false;
         });
     }
-
-    showIconCheck.addEventListener('change', function () {
-        chrome.storage.sync.set({ showIcon: this.checked });
-    });
 
     newTabCheck.addEventListener('change', function () {
         chrome.storage.sync.set({ newTab: this.checked });
