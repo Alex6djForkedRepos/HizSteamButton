@@ -53,8 +53,11 @@ https://github.com/hiz0147/HizSearch-Millennium
 
 ## Preview
 
-![Preview](https://i.ibb.co/dsfS3s46/image.png)
+<img width="630" height="287" alt="a" src="https://github.com/user-attachments/assets/830686de-d3e1-4083-a0d9-d752835baef9" />
+<img width="401" height="352" alt="b" src="https://github.com/user-attachments/assets/3002e328-ef08-43a4-95ae-c50fef469b37" />
+
 <br>
+
 ![Preview](https://i.ibb.co/yByTKQDW/b.png)
 
 ## Contributing
